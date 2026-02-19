@@ -1,0 +1,10 @@
+id = "zcode"
+name = "ZCode"
+version = "0.1.0"
+schema_version = 1
+authors = ["ZCode Contributors"]
+description = "Intelligent profile orchestration and workflow coordination for Zed"
+repository = "https://github.com/user/zcode-extension"
+
+[context_servers.zcode-orchestrator]
+name = "ZCode Orchestrator"

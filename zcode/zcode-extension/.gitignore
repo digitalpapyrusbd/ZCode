@@ -1,0 +1,12 @@
+# Rust build artifacts
+/target/
+**/*.rs.bk
+*.pdb
+Cargo.lock
+
+# Zed extension build output
+extension.wasm
+
+# Debug logs
+*.log
+mcp_server/*.log
