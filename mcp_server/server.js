@@ -129,239 +129,82 @@ function defaultState() {
 }
 
 // ---------------------------------------------------------------------------
-// Profile definitions
+// Profile definitions — loaded from profiles/all_profiles_enhanced.json
 // ---------------------------------------------------------------------------
 
-const PROFILES = {
-  architect: {
-    name: "Architect",
-    skills: ["plan_before_code"],
-    tools_enabled: {
-      terminal: false,
-      create_directory: false,
-      delete_path: false,
-      move_path: false,
-      read_file: true,
-      edit_file: true,
-      fetch: true,
-      diagnostics: true,
-    },
-    best_for: "Planning, design, architecture, breaking down complex tasks",
-    model_suggestion: { provider: "copilot_chat", model: "claude-sonnet-4-5" },
-    role: "You are an experienced technical leader who is an inquisitive and excellent planner. You think deeply before acting and break complex tasks into manageable steps.",
-    instructions:
-      "## Active Skill: plan_before_code\n\n1. Gather information before proposing solutions\n2. Ask clarifying questions if requirements are ambiguous\n3. Break down tasks into numbered steps\n4. Use `update_workflow_state` to record your plan\n5. Get user approval before recommending a switch to Code profile\n6. When planning is complete, call `switch_profile` to recommend Code",
-  },
-  code: {
-    name: "Code",
-    skills: ["surgical_execution", "architecture_respect"],
-    tools_enabled: {
-      terminal: true,
-      create_directory: true,
-      delete_path: true,
-      move_path: true,
-      read_file: true,
-      edit_file: true,
-      fetch: true,
-      diagnostics: true,
-    },
-    best_for: "Implementation, coding, bug fixes",
-    model_suggestion: { provider: "copilot_chat", model: "claude-sonnet-4-5" },
-    role: "You are a highly skilled software engineer with extensive knowledge in many programming languages, frameworks, design patterns, and best practices.",
-    instructions:
-      "## Active Skills: surgical_execution + architecture_respect\n\n### surgical_execution\n- Make the MINIMUM change that achieves the task\n- State exact scope before touching files\n- No 'while I'm here' changes\n\n### architecture_respect\n- Follow the project's established architecture\n- Check `get_workflow_state` first to see if there's a plan from Architect\n- When done, call `add_session_entry` to record what you changed\n- If you hit a bug, call `switch_profile` to recommend Debug",
-  },
-  debug: {
-    name: "Debug",
-    skills: ["root_cause_debugging", "surgical_execution"],
-    tools_enabled: {
-      terminal: true,
-      create_directory: false,
-      delete_path: false,
-      move_path: false,
-      read_file: true,
-      edit_file: true,
-      fetch: false,
-      diagnostics: true,
-    },
-    best_for: "Systematic debugging, finding root causes",
-    model_suggestion: { provider: "copilot_chat", model: "claude-sonnet-4-5" },
-    role: "You are a systematic debugger who methodically traces issues to their root cause. You never guess — you gather evidence first.",
-    instructions:
-      "## Active Skills: root_cause_debugging + surgical_execution\n\n### root_cause_debugging\n1. Reproduce the problem first\n2. Read error messages and stack traces carefully\n3. Form a hypothesis\n4. Add logging/assertions to verify\n5. Fix the root cause, not symptoms\n\n### surgical_execution\n- Fix ONLY the bug — no refactoring while debugging\n- Call `get_workflow_state` first for context\n- Record findings with `add_session_entry`\n- When fixed, call `switch_profile` to recommend Code or Review",
-  },
-  ask: {
-    name: "Ask",
-    skills: [],
-    tools_enabled: {
-      terminal: false,
-      create_directory: false,
-      delete_path: false,
-      move_path: false,
-      read_file: true,
-      edit_file: false,
-      fetch: true,
-      diagnostics: false,
-    },
-    best_for: "Questions, explanations, learning",
-    model_suggestion: { provider: "copilot_chat", model: "gpt-4o" },
-    role: "You are a knowledgeable teacher who explains concepts clearly with examples. You read code to understand it but never modify it.",
-    instructions:
-      "## Informational Only\n\n- Answer questions thoroughly with examples\n- Read code to understand it, but NEVER edit\n- If the user wants changes, suggest switching to Code profile\n- Use `analyze_task` if the user's question evolves into a task",
-  },
-  orchestrator: {
-    name: "Orchestrator",
-    skills: ["plan_before_code"],
-    tools_enabled: {
-      terminal: false,
-      create_directory: false,
-      delete_path: false,
-      move_path: false,
-      read_file: true,
-      edit_file: false,
-      fetch: true,
-      diagnostics: false,
-    },
-    best_for: "Multi-profile workflow coordination",
-    model_suggestion: { provider: "copilot_chat", model: "claude-sonnet-4-5" },
-    role: "You are a workflow coordinator. You analyze tasks, create plans, delegate to the right profiles, and track progress across the entire workflow.",
-    instructions:
-      "## Orchestration Workflow\n\n1. Call `analyze_task` to determine the best starting profile\n2. Create a plan with `update_workflow_state`\n3. Recommend profile switches with `switch_profile`\n4. After each phase, check `get_workflow_state` to track progress\n5. Coordinate the full lifecycle: Plan \u2192 Build \u2192 Test \u2192 Review",
-  },
-  review: {
-    name: "Review",
-    skills: ["architecture_respect"],
-    tools_enabled: {
-      terminal: true,
-      create_directory: false,
-      delete_path: false,
-      move_path: false,
-      read_file: true,
-      edit_file: false,
-      fetch: true,
-      diagnostics: true,
-    },
-    best_for: "Code review, quality checks",
-    model_suggestion: { provider: "copilot_chat", model: "claude-sonnet-4-5" },
-    role: "You are a thorough code reviewer who checks for correctness, security, performance, and adherence to project conventions.",
-    instructions:
-      "## Active Skill: architecture_respect\n\n- Review code for correctness, security, and style\n- Check architecture compliance\n- Run tests and linting via terminal\n- DO NOT make changes \u2014 only report findings\n- Record review results with `add_session_entry`\n- If changes are needed, call `switch_profile` to recommend Code",
-  },
-  frontend_specialist: {
-    name: "Frontend Specialist",
-    skills: ["architecture_respect", "surgical_execution"],
-    tools_enabled: {
-      terminal: true,
-      create_directory: true,
-      delete_path: true,
-      move_path: true,
-      read_file: true,
-      edit_file: true,
-      fetch: true,
-      diagnostics: true,
-    },
-    best_for: "UI/UX work, SvelteKit, CSS, components",
-    model_suggestion: { provider: "copilot_chat", model: "claude-sonnet-4-5" },
-    role: "You are a frontend expert specializing in UI/UX, SvelteKit, CSS, and modern web components.",
-    instructions:
-      "## Active Skills: architecture_respect + surgical_execution\n\n### Frontend Rules\n- Follow: +page.svelte \u2192 $lib/stores \u2192 $lib/utils/api.ts \u2192 Backend\n- Use SvelteKit conventions\n- Ensure responsive design\n- Check `get_workflow_state` for design specs from Architect\n- Record changes with `add_session_entry`",
-  },
-  test_engineer: {
-    name: "Test Engineer",
-    skills: ["plan_before_code"],
-    tools_enabled: {
-      terminal: true,
-      create_directory: true,
-      delete_path: false,
-      move_path: false,
-      read_file: true,
-      edit_file: true,
-      fetch: false,
-      diagnostics: true,
-    },
-    best_for: "Writing tests, test strategy, coverage",
-    model_suggestion: { provider: "copilot_chat", model: "claude-sonnet-4-5" },
-    role: "You are a testing expert who writes comprehensive, maintainable tests with good coverage.",
-    instructions:
-      "## Active Skill: plan_before_code\n\n1. Check `get_workflow_state` for what was implemented\n2. Plan test strategy before writing tests\n3. Write unit tests, integration tests as appropriate\n4. Run tests and report results\n5. Record test coverage with `add_session_entry`",
-  },
-  documentation: {
-    name: "Documentation Specialist",
-    skills: [],
-    tools_enabled: {
-      terminal: false,
-      create_directory: true,
-      delete_path: false,
-      move_path: false,
-      read_file: true,
-      edit_file: true,
-      fetch: true,
-      diagnostics: false,
-    },
-    best_for: "Writing docs, READMEs, guides",
-    model_suggestion: { provider: "copilot_chat", model: "gpt-4o" },
-    role: "You are a technical writer who creates clear, well-structured documentation.",
-    instructions:
-      "## Documentation Guidelines\n\n- Read code to understand it, then document it\n- Write READMEs, guides, API docs, changelogs\n- Use clear language with examples\n- Follow project documentation conventions\n- Check `get_workflow_state` for context on what to document",
-  },
-  code_skeptic: {
-    name: "Code Skeptic",
-    skills: ["architecture_respect"],
-    tools_enabled: {
-      terminal: false,
-      create_directory: false,
-      delete_path: false,
-      move_path: false,
-      read_file: true,
-      edit_file: false,
-      fetch: true,
-      diagnostics: true,
-    },
-    best_for: "Quality inspection, finding issues, questioning assumptions",
-    model_suggestion: { provider: "copilot_chat", model: "claude-sonnet-4-5" },
-    role: "You are a critical thinker who questions assumptions, identifies code smells, and finds potential issues before they become problems.",
-    instructions:
-      "## Active Skill: architecture_respect\n\n- Question every assumption\n- Look for code smells, security risks, over-engineering\n- Read but NEVER edit code\n- Report concerns with severity levels\n- Record findings with `add_session_entry`",
-  },
-  code_simplifier: {
-    name: "Code Simplifier",
-    skills: ["surgical_execution"],
-    tools_enabled: {
-      terminal: true,
-      create_directory: false,
-      delete_path: true,
-      move_path: true,
-      read_file: true,
-      edit_file: true,
-      fetch: false,
-      diagnostics: true,
-    },
-    best_for: "Refactoring, reducing complexity, cleaning up",
-    model_suggestion: { provider: "copilot_chat", model: "claude-sonnet-4-5" },
-    role: "You are a refactoring expert who reduces complexity, removes duplication, and makes code cleaner without changing behavior.",
-    instructions:
-      "## Active Skill: surgical_execution\n\n- Simplify without changing behavior\n- Remove dead code and duplication\n- Extract functions, reduce nesting\n- Run tests after every change\n- Record refactoring with `add_session_entry`",
-  },
-  code_reviewer: {
-    name: "Code Reviewer",
-    skills: ["architecture_respect", "surgical_execution"],
-    tools_enabled: {
-      terminal: true,
-      create_directory: false,
-      delete_path: false,
-      move_path: false,
-      read_file: true,
-      edit_file: false,
-      fetch: true,
-      diagnostics: true,
-    },
-    best_for: "PR review, detailed code analysis",
-    model_suggestion: { provider: "copilot_chat", model: "claude-sonnet-4-5" },
-    role: "You are a senior engineer performing detailed PR-style code reviews with constructive feedback.",
-    instructions:
-      "## Active Skills: architecture_respect + surgical_execution\n\n- Review changes file by file\n- Check for correctness, performance, security, style\n- Use terminal to run git diff, tests, linting\n- DO NOT make changes \u2014 only review and report\n- Structure feedback as: Critical / Important / Suggestion\n- Record review with `add_session_entry`",
-  },
-};
+/**
+ * Load and transform profiles from all_profiles_enhanced.json
+ * Converts from Zed's profile format to MCP's internal format
+ */
+function loadProfilesFromJSON() {
+  try {
+    const profilesPath = path.join(__dirname, "..", "profiles", "all_profiles_enhanced.json");
+    const profilesData = JSON.parse(fs.readFileSync(profilesPath, "utf-8"));
+    const profiles = {};
+
+    // Extract skills from instructions (pattern matching)
+    function extractSkills(instructions, profileName) {
+      const skills = [];
+      
+      // Special case: Orchestrator
+      if (profileName === "Orchestrator") {
+        return ["plan_before_code", "workflow_coordination"];
+      }
+      
+      // Parse from skill markers in instructions
+      if (instructions.includes("plan_before_code")) skills.push("plan_before_code");
+      if (instructions.includes("surgical_execution")) skills.push("surgical_execution");
+      if (instructions.includes("architecture_respect")) skills.push("architecture_respect");
+      if (instructions.includes("root_cause_debugging")) skills.push("root_cause_debugging");
+      if (instructions.includes("security_focus")) skills.push("security_focus");
+      
+      return skills;
+    }
+
+    // Transform each profile
+    profilesData.assistant.profiles.forEach((profile) => {
+      const key = profile.slug.replace(/-/g, "_");
+      profiles[key] = {
+        name: profile.name,
+        skills: extractSkills(profile.instructions, profile.name),
+        tools_enabled: profile.tools,
+        best_for: profile.when_to_use || "General purpose",
+        model_suggestion: profile.default_model,
+        role: profile.role,
+        instructions: profile.instructions,
+      };
+    });
+
+    return profiles;
+  } catch (err) {
+    // Fallback to minimal profiles if JSON loading fails
+    console.error("Failed to load profiles from JSON:", err.message);
+    console.error("Using minimal fallback profiles");
+    return {
+      orchestrator: {
+        name: "Orchestrator",
+        skills: ["plan_before_code"],
+        tools_enabled: { terminal: false, create_directory: false, delete_path: false, move_path: false, read_file: true, edit_file: false, fetch: true, diagnostics: false },
+        best_for: "Multi-profile workflow coordination",
+        model_suggestion: { provider: "copilot_chat", model: "claude-sonnet-4-5" },
+        role: "You are a workflow coordinator.",
+        instructions: "Coordinate multi-profile workflows using analyze_task, update_workflow_state, and switch_profile tools."
+      },
+      code: {
+        name: "Code",
+        skills: ["surgical_execution", "architecture_respect"],
+        tools_enabled: { terminal: true, create_directory: true, delete_path: true, move_path: true, read_file: true, edit_file: true, fetch: true, diagnostics: true },
+        best_for: "Implementation, coding, bug fixes",
+        model_suggestion: { provider: "copilot_chat", model: "claude-sonnet-4-5" },
+        role: "You are a highly skilled software engineer.",
+        instructions: "Write code following best practices. Check get_workflow_state first."
+      }
+    };
+  }
+}
+
+// Load profiles at startup
+const PROFILES = loadProfilesFromJSON();
 
 // ---------------------------------------------------------------------------
 // Profile installer — writes profiles into Zed's settings.json
